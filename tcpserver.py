@@ -1,11 +1,6 @@
 """ From socketserver.py program is had assembled """
 
 import socketserver
-import struct
-
-
-class BytesConv(struct.Struct):
-    pass
 
 
 class RequestsHandler(socketserver.BaseRequestHandler):
@@ -36,12 +31,3 @@ class TCP(socketserver.TCPServer, socketserver.ThreadingMixIn):
             self.server_address,
             self
         )
-
-
-packed = BytesConv('lll10s')
-packed = packed.pack(1, 2, 100, b'1234567890')
-print(packed)
-
-unpacked = BytesConv('lll10s')
-unpacked = unpacked.unpack(packed)
-print(unpacked)
