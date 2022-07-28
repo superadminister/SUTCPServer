@@ -1,44 +1,47 @@
 """ From socketserver.py program is had assembled """
 
-from socketserver import *
+import socketserver
+import struct
 
 
-class RequestHandler(BaseRequestHandler):
-    """ Class is for request handler a data, all operations of BaseServer class is here (operators) """
+class BytesConv(struct.Struct):
+    pass
 
-    def __init__(self, request, client_address, server):
-        super(RequestHandler, self).__init__(request, client_address, server)
-        self.data = None
-        self.conn, self.addr = (None, None)
 
-    def handle(self) -> None:
-        data = self.conn.recv(5000)
-        self.data = data.decode()
-        self.conn.send(f'{self.addr} \n {self.conn}'.encode())
+class RequestsHandler(socketserver.BaseRequestHandler):
 
     def setup(self) -> None:
         self.conn, self.addr = self.server.get_request()
+        self.data = None
+
+    def handle(self) -> None:
+        self.conn.send(b'from server is connecting ..')
+        print(self.conn.recv(1024))
 
     def finish(self) -> None:
-        self.server.service_actions()
-
-
-class SUTCPServer(TCPServer, ThreadingMixIn):
-    """ This class calling a BaseRequestHandler-RequestHandler is class (getter necessary program) """
-
-    daemon_threads = True
-
-    def service_actions(self):
-        self.process_request(
-            request=self.socket,
-            client_address=self.server_address
+        self.server.close_request(request=self.conn)
+        self.server.shutdown_request(request=self.conn)
+        self.server.process_request(
+            request=self.request,
+            client_address=self.client_address
         )
 
 
-TCPServer = SUTCPServer(
-        server_address=('127.0.0.1', 65000),
-        RequestHandlerClass=RequestHandler,
-        bind_and_activate=True
-    )
+class TCP(socketserver.TCPServer, socketserver.ThreadingMixIn):
+    daemon_threads = True
 
-TCPServer.serve_forever()
+    def service_actions(self) -> None:
+        self.RequestHandlerClass(
+            self.socket,
+            self.server_address,
+            self
+        )
+
+
+packed = BytesConv('lll10s')
+packed = packed.pack(1, 2, 100, b'1234567890')
+print(packed)
+
+unpacked = BytesConv('lll10s')
+unpacked = unpacked.unpack(packed)
+print(unpacked)
